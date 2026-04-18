@@ -1,0 +1,87 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  REVIEWER
+}
+
+enum BriefStatus {
+  NEW
+  UNDER_REVIEW
+  PROPOSAL_SENT
+  WON
+  ARCHIVED
+}
+
+model User {
+  id             String   @id @default(cuid())
+  email          String   @unique
+  password       String
+  role           Role     @default(REVIEWER)
+  
+  notes          Note[]
+  assignedBriefs Brief[]  @relation("AssignedBriefs") 
+}
+model Brief {
+  id          String      @id @default(cuid())
+  title       String
+  description String      @db.Text
+  budget      String
+  urgency     String
+  contactInfo String
+  status      BriefStatus @default(NEW)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  analysis    AIAnalysis?
+  notes       Note[]
+  events      BriefEvent[]
+  isArchived  Boolean  @default(false)
+  assigneeId  String?
+  assignee    User?    @relation("AssignedBriefs", fields: [assigneeId], references: [id])
+
+  @@index([status, createdAt])
+}
+
+model AIAnalysis {
+  id                  String   @id @default(cuid())
+  briefId             String   @unique
+  brief               Brief    @relation(fields: [briefId], references: [id], onDelete: Cascade)
+  features            String[] // Array of extracted features
+  category            String
+  effortHours         Int
+  techStack           String[]
+  complexityScore     Int      // 1-5
+  manualOverrideReason String?
+  createdAt           DateTime @default(now())
+}
+
+model Note {
+  id        String   @id @default(cuid())
+  content   String   @db.Text
+  briefId   String
+  brief     Brief    @relation(fields: [briefId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@index([briefId])
+}
+
+model BriefEvent {
+  id        String      @id @default(cuid())
+  briefId   String
+  brief     Brief       @relation(fields: [briefId], references: [id], onDelete: Cascade)
+  eventType String      
+  fromStage BriefStatus?
+  toStage   BriefStatus?
+  createdAt DateTime    @default(now())
+
+  @@index([briefId])
+}
