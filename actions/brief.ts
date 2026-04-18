@@ -1,4 +1,3 @@
-// actions/brief.ts
 'use server'
 
 import { revalidatePath } from 'next/cache'
@@ -16,26 +15,32 @@ const ratelimit = new Ratelimit({
   analytics: true,
 })
 
+// ✅ helper to normalize FormData
+function getFormValue(formData: FormData, key: string) {
+  return String(formData.get(key) ?? "")
+}
+
 export async function submitIntakeForm(formData: FormData) {
   const requestHeaders = await headers()
-  const ip = requestHeaders.get("x-forwarded-for") ?? "127.0.0.1"
+ const ip = requestHeaders.get("x-forwarded-for")?.split(",")[0] || "127.0.0.1"
   
   const { success: rateLimitSuccess } = await ratelimit.limit(ip)
   if (!rateLimitSuccess) {
     return { success: false, error: "Too many requests. Please wait a minute." }
   }
 
+  // ✅ FIX: normalize all inputs
   const rawData = {
-    title: formData.get('title'),
-    description: formData.get('description'),
-    budget: formData.get('budget'),
-    urgency: formData.get('urgency'),
-    contactInfo: formData.get('contactInfo'),
+    title: getFormValue(formData, 'title'),
+    description: getFormValue(formData, 'description'),
+    budget: getFormValue(formData, 'budget'),
+    urgency: getFormValue(formData, 'urgency'),
+    contactInfo: getFormValue(formData, 'contactInfo'),
   }
 
   const validatedFields = submitBriefSchema.safeParse(rawData)
   if (!validatedFields.success) {
-    return { success: false, error: validatedFields.error.issues[0].message }
+    return { success: false, error: JSON.stringify(validatedFields.error.issues, null, 2) }
   }
 
   const { title, description, budget, urgency, contactInfo } = validatedFields.data
@@ -51,14 +56,19 @@ export async function submitIntakeForm(formData: FormData) {
 
     return { success: true, briefId: brief.id }
   } catch (error) {
-    return { success: false, error: "Failed to submit brief." }
-  }
+  console.error("PRISMA ERROR:", error)
+  return { success: false, error: "Failed to submit brief." }
+}
 }
 
 export async function updateBriefStatus(id: string, newStatus: string) {
-  const validatedFields = updateStatusSchema.safeParse({ id, newStatus })
+  const validatedFields = updateStatusSchema.safeParse({
+    id: String(id ?? ""),
+    newStatus: String(newStatus ?? "")
+  })
+
   if (!validatedFields.success) {
-    return { success: false, error: validatedFields.error.issues[0].message }
+   return { success: false, error: JSON.stringify(validatedFields.error.issues, null, 2) }
   }
 
   try {
@@ -72,14 +82,14 @@ export async function updateBriefStatus(id: string, newStatus: string) {
     await prisma.$transaction([
       prisma.brief.update({
         where: { id },
-        data: { status: newStatus as any }
+        data: { status: validatedFields.data.newStatus as any }
       }),
       prisma.briefEvent.create({
         data: {
           briefId: id,
           eventType: 'STAGE_CHANGE',
           fromStage: currentBrief.status,
-          toStage: newStatus as any
+          toStage: validatedFields.data.newStatus as any
         }
       })
     ])
@@ -93,14 +103,17 @@ export async function updateBriefStatus(id: string, newStatus: string) {
 }
 
 export async function overrideAIEstimate(formData: FormData) {
-  const validatedFields = overrideEstimateSchema.safeParse({
-    briefId: formData.get('briefId'),
-    complexityScore: formData.get('complexityScore'),
-    manualOverrideReason: formData.get('manualOverrideReason'),
-  })
+  // ✅ FIX: normalize safely
+  const rawData = {
+    briefId: getFormValue(formData, 'briefId'),
+    complexityScore: formData.get('complexityScore'), // keep raw for coercion
+    manualOverrideReason: getFormValue(formData, 'manualOverrideReason'),
+  }
+
+  const validatedFields = overrideEstimateSchema.safeParse(rawData)
 
   if (!validatedFields.success) {
-    return { success: false, error: validatedFields.error.issues[0].message }
+   return { success: false, error: JSON.stringify(validatedFields.error.issues, null, 2) }
   }
 
   const { briefId, complexityScore, manualOverrideReason } = validatedFields.data
@@ -114,8 +127,12 @@ export async function overrideAIEstimate(formData: FormData) {
     await redis.del('analytics:pipeline')
     revalidatePath(`/dashboard/${briefId}`)
     revalidatePath('/dashboard')
+
+    // ✅ FIX: return response
+    return { success: true }
   } catch (error) {
     console.error("Override error:", error)
+    return { success: false, error: "Failed to override estimate." }
   }
 }
 
@@ -124,6 +141,7 @@ export async function loadMoreBriefs(cursor?: string) {
   if (!session) throw new Error("Unauthorized")
 
   const limit = 12
+
   const briefs = await prisma.brief.findMany({
     take: limit + 1,
     skip: cursor ? 1 : 0,
@@ -137,6 +155,7 @@ export async function loadMoreBriefs(cursor?: string) {
   })
 
   let nextCursor: string | undefined = undefined
+
   if (briefs.length > limit) {
     const nextItem = briefs.pop()
     nextCursor = nextItem!.id
