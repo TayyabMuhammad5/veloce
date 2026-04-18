@@ -14,7 +14,6 @@ export default async function BriefDetailPage({ params }: { params: Promise<{ br
 
   const resolvedParams = await params
 
-  // Fetch the brief along with the newly added events for the timeline
   const brief = await prisma.brief.findUnique({
     where: { id: resolvedParams.briefId },
     include: {
@@ -30,7 +29,6 @@ export default async function BriefDetailPage({ params }: { params: Promise<{ br
 
   if (!brief) return notFound()
 
-  // Security check: Reviewers can only see briefs assigned to them
   if (session.user.role === "REVIEWER" && brief.assigneeId !== session.user.id) {
     redirect("/dashboard")
   }
@@ -39,17 +37,15 @@ export default async function BriefDetailPage({ params }: { params: Promise<{ br
     where: { role: "REVIEWER" }
   })
 
-  // --- INLINE SERVER ACTIONS ---
+  // --- SERVER ACTIONS ---
 
   async function assignBrief(formData: FormData) {
     "use server"
     const assigneeId = formData.get("assigneeId") as string
-    
     await prisma.brief.update({
       where: { id: brief!.id },
       data: { assigneeId: assigneeId === "unassigned" ? null : assigneeId }
     })
-    
     revalidatePath(`/dashboard/${brief!.id}`)
     revalidatePath(`/dashboard`)
   }
@@ -58,7 +54,6 @@ export default async function BriefDetailPage({ params }: { params: Promise<{ br
     'use server'
     const content = formData.get('content') as string
     if (!content) return
-
     await prisma.note.create({
       data: { content, briefId: brief!.id, authorId: session!.user.id }
     })
@@ -92,7 +87,7 @@ export default async function BriefDetailPage({ params }: { params: Promise<{ br
         <div className="flex items-center gap-6 text-sm font-medium">
           <div>Assigned to: <span className="text-blue-400">{brief.assignee?.email || "Unassigned"}</span></div>
           
-          <form action={toggleArchive}>
+          <form action={async () => { "use server"; await toggleArchive(); }}>
             <button type="submit" className="bg-gray-700 hover:bg-gray-600 border border-gray-600 text-white px-4 py-1.5 rounded-lg text-sm font-bold transition">
               {brief.isArchived ? "Unarchive Project" : "Archive Project"}
             </button>
@@ -103,11 +98,10 @@ export default async function BriefDetailPage({ params }: { params: Promise<{ br
       <main className="p-8 flex-1 grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-7xl mx-auto w-full">
         <div className="space-y-8">
           
-          {/* Admin Assignment Controls */}
           {session.user.role === "ADMIN" && (
             <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 border-l-4 border-l-purple-500">
               <h2 className="text-sm font-extrabold uppercase tracking-wider text-purple-600 mb-4">Admin Controls: Assignment</h2>
-              <form action={assignBrief} className="flex gap-3">
+              <form action={async (fd) => { "use server"; await assignBrief(fd); }} className="flex gap-3">
                 <select 
                   name="assigneeId" 
                   defaultValue={brief.assigneeId || "unassigned"} 
@@ -125,7 +119,6 @@ export default async function BriefDetailPage({ params }: { params: Promise<{ br
             </div>
           )}
 
-          {/* Client Requirements */}
           <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm h-fit">
             <h2 className="text-xl font-bold mb-4 border-b pb-2 text-gray-800">Client Requirements</h2>
             <div className="space-y-4">
@@ -150,7 +143,6 @@ export default async function BriefDetailPage({ params }: { params: Promise<{ br
             </div>
           </div>
 
-          {/* Stage Timeline */}
           <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm h-fit">
             <h2 className="text-xl font-bold mb-4 border-b pb-2 text-gray-800">Stage Timeline</h2>
             <div className="space-y-4">
@@ -173,12 +165,9 @@ export default async function BriefDetailPage({ params }: { params: Promise<{ br
               )}
             </div>
           </div>
-
         </div>
 
         <div className="space-y-8">
-          
-          {/* AI Analysis Block with Manual Override Form */}
           <div className="bg-blue-50 p-6 rounded-xl border border-blue-100 shadow-sm">
             <h2 className="text-xl font-bold mb-4 text-blue-900 border-b border-blue-200 pb-2">AI Analysis</h2>
             {brief.analysis ? (
@@ -210,7 +199,6 @@ export default async function BriefDetailPage({ params }: { params: Promise<{ br
 
                  <div className="mt-6 pt-4 border-t border-blue-200">
                    <h3 className="text-sm font-bold text-blue-900 mb-3">Adjust AI Estimate</h3>
-                   {/* FIXED FORM ACTION FOR NEXT.JS 15 TYPESCRIPT COMPLIANCE */}
                    <form 
                      action={async (formData: FormData) => {
                        "use server"
@@ -219,7 +207,6 @@ export default async function BriefDetailPage({ params }: { params: Promise<{ br
                      className="space-y-3"
                    >
                      <input type="hidden" name="briefId" value={brief.id} />
-                     
                      <div className="flex gap-3">
                        <div className="w-24">
                          <label className="block text-xs font-semibold text-blue-800 mb-1">New Score</label>
@@ -237,7 +224,6 @@ export default async function BriefDetailPage({ params }: { params: Promise<{ br
                      </button>
                    </form>
                  </div>
-
               </div>
             ) : (
               <div className="py-4 text-center">
@@ -246,7 +232,6 @@ export default async function BriefDetailPage({ params }: { params: Promise<{ br
             )}
           </div>
 
-          {/* Internal Notes Thread */}
           <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm flex flex-col h-[500px]">
             <h2 className="text-xl font-bold mb-4 border-b pb-2 text-gray-800">Internal Notes</h2>
             <div className="flex-1 space-y-4 mb-4 overflow-y-auto pr-2">
@@ -265,8 +250,7 @@ export default async function BriefDetailPage({ params }: { params: Promise<{ br
                 </div>
               )}
             </div>
-
-            <form action={submitNote} className="flex gap-2 pt-4 border-t">
+            <form action={async (fd) => { "use server"; await submitNote(fd); }} className="flex gap-2 pt-4 border-t">
               <input 
                 type="text" 
                 name="content"
