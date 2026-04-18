@@ -39,7 +39,7 @@ export async function submitIntakeForm(formData: FormData) {
 
   // If the data is bad, instantly return the specific Zod error message
   if (!validatedFields.success) {
-    return { success: false, error: validatedFields.error.errors[0].message }
+    return { success: false, error: validatedFields.error.issues[0].message }
   }
 
   // The data is now 100% type-safe and clean
@@ -65,8 +65,8 @@ export async function updateBriefStatus(id: string, newStatus: string) {
   // 1. VALIDATE DATA WITH ZOD
   const validatedFields = updateStatusSchema.safeParse({ id, newStatus })
 
-  if (!validatedFields.success) {
-    return { success: false, error: validatedFields.error.errors[0].message }
+ if (!validatedFields.success) {
+    return { success: false, error: validatedFields.error.issues[0].message }
   }
 
   const cleanId = validatedFields.data.id
@@ -143,8 +143,14 @@ export async function overrideAIEstimate(formData: FormData) {
     manualOverrideReason: formData.get('manualOverrideReason'),
   })
 
+  // Change this:
+  // if (!validatedFields.success) {
+  //   return { success: false, error: validatedFields.error.errors[0].message }
+  // }
+
+  // To this:
   if (!validatedFields.success) {
-    return { success: false, error: validatedFields.error.errors[0].message }
+    return { success: false, error: validatedFields.error.issues[0].message }
   }
 
   const { briefId, complexityScore, manualOverrideReason } = validatedFields.data
