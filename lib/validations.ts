@@ -1,4 +1,3 @@
-// lib/validations.ts
 import { z } from "zod";
 
 export const submitBriefSchema = z.object({
