@@ -49,7 +49,7 @@ export default async function HomePage() {
                 href="/login" 
                 className="px-8 py-4 bg-white text-gray-900 border border-gray-200 rounded-xl font-bold shadow-sm hover:bg-gray-50 transition-colors"
               >
-                Admin Login
+                Employee Login
               </Link>
             </>
           )}
