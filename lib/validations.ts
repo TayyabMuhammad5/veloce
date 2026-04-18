@@ -1,4 +1,4 @@
-
+// lib/validations.ts
 import { z } from "zod";
 
 export const submitBriefSchema = z.object({
@@ -6,7 +6,8 @@ export const submitBriefSchema = z.object({
   description: z.string().min(20, "Please provide a more detailed description."),
   budget: z.string().min(1, "Budget is required."),
   urgency: z.enum(["LOW", "MEDIUM", "HIGH"], {
-    errorMap: () => ({ message: "Please select a valid urgency level." }),
+    // Using invalid_type_error directly instead of errorMap
+    invalid_type_error: "Please select a valid urgency level.",
   }),
   contactInfo: z.string().email("Please enter a valid email address."),
 });
@@ -14,7 +15,7 @@ export const submitBriefSchema = z.object({
 export const updateStatusSchema = z.object({
   id: z.string().min(1, "Brief ID is required."),
   newStatus: z.enum(["NEW", "UNDER_REVIEW", "PROPOSAL_SENT", "WON", "ARCHIVED"], {
-    errorMap: () => ({ message: "Invalid status selected." }),
+    invalid_type_error: "Invalid status selected.",
   }),
 });
 
