@@ -3,8 +3,8 @@
 Veloce is a full-stack Next.js application designed for digital agencies to automate project intake, estimate complexities using AI, and manage their pipeline via a real-time Kanban board.
 
 ## 🚀 Live Demo & Links
-- **Deployed URL:** [Insert your Vercel URL here]
-- **Repository:** [Insert your GitHub URL here]
+- **Deployed URL:** https://veloce-woad.vercel.app/
+- **Repository:** https://github.com/TayyabMuhammad5/veloce
 
 ---
 
