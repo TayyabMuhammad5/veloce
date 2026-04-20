@@ -25,11 +25,12 @@ export default async function LoginPage(props: any) {
   }
 
   return (
+  <div className="w-full">
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <div className="w-full max-w-md bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
-        <h1 className="text-2xl font-bold text-center mb-8">Login</h1>
+      <div className="max-w-md bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
         
-        {/* THE WARNING MESSAGE */}
+        <h1 className="text-2xl font-bold text-center mb-8">Login</h1>
+
         {isError && (
           <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm font-bold mb-6 text-center border border-red-200">
             You have entered wrong email or password
@@ -49,8 +50,15 @@ export default async function LoginPage(props: any) {
             Sign In
           </button>
         </form>
-        
+
+        {/* MOVE HERE */}
+        <div className="mt-6 text-sm text-gray-600 text-center">
+          <h3>Email: admin@veloce.com</h3>
+          <h3>Password: password123</h3>
+        </div>
+
       </div>
     </div>
-  )
+  </div>
+)
 }
