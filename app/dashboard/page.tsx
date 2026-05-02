@@ -33,7 +33,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
-      <header className="bg-gray-900 px-8 py-4 flex justify-between items-center text-white shrink-0 shadow-md">
+      <header className="bg-gray-900 px-4 sm:px-8 py-4 flex justify-between items-center text-white shrink-0 shadow-md">
         <div>
           <h1 className="text-xl font-bold tracking-tight">Agency Dashboard</h1>
         </div>
@@ -46,14 +46,14 @@ export default async function DashboardPage() {
             </div>
           </div>
           
-          <div className="flex items-center gap-3">
-            <Link href="/dashboard/archived" className="text-sm font-bold text-gray-300 hover:text-white mr-4 transition-colors">
-              View Archive
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            <Link href="/dashboard/archived" className="text-xs sm:text-sm font-bold text-gray-300 hover:text-white sm:mr-4 transition-colors hidden sm:block">
+              Archive
             </Link>
 
             {session.user.role === "ADMIN" && (
-              <Link href="/dashboard/team" className="bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded-lg text-sm font-bold transition-all shadow-sm">
-                Manage Team
+              <Link href="/dashboard/team" className="bg-purple-600 hover:bg-purple-500 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-bold transition-all shadow-sm">
+                Team
               </Link>
             )}
 
@@ -61,7 +61,7 @@ export default async function DashboardPage() {
               "use server"
               await signOut({ redirectTo: "/" })
             }}>
-              <button type="submit" className="bg-red-600 hover:bg-red-500 text-white px-5 py-2 rounded-lg text-sm font-bold transition-all shadow-sm">
+              <button type="submit" className="bg-red-600 hover:bg-red-500 text-white px-3 py-1.5 sm:px-5 sm:py-2 rounded-lg text-xs sm:text-sm font-bold transition-all shadow-sm">
                 Log Out
               </button>
             </form>
@@ -69,9 +69,9 @@ export default async function DashboardPage() {
         </div>
       </header>
 
-      <main className="p-8 flex-1 flex flex-col overflow-hidden">
-        <div className="mb-6 shrink-0">
-          <h2 className="text-3xl font-extrabold text-gray-900">Pipeline</h2>
+      <main className="p-4 sm:p-8 flex-1 flex flex-col overflow-hidden">
+        <div className="mb-4 sm:mb-6 shrink-0">
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900">Pipeline</h2>
           <p className="text-gray-500 mt-1">
             {session.user.role === 'ADMIN' 
               ? "Manage all incoming client briefs and assignments." 

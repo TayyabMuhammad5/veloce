@@ -81,13 +81,13 @@ export default function KanbanBoard({
 
   return (
     <div className="flex flex-col h-full">
-      <div className="grid grid-cols-4 gap-6 flex-1">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 flex-1">
         {COLUMNS.map((status) => (
           <div 
             key={status} 
             onDragOver={handleDragOver}
             onDrop={(e) => handleDrop(e, status)}
-            className="bg-gray-200/50 p-4 rounded-xl h-[70vh] overflow-y-auto border border-gray-200"
+            className="w-full bg-gray-200/50 p-4 rounded-xl min-h-[150px] lg:h-[70vh] max-h-[70vh] overflow-y-auto border border-gray-200"
           >
             <h2 className="font-bold mb-4 text-sm text-gray-600 tracking-wider capitalize">
               {status.replace('_', ' ')}
